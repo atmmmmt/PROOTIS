@@ -4,7 +4,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import { BriefcaseBusiness, CircleDollarSign, KeyRound, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@prootech/shared-types";
 import { App as LegacyApp } from "./App";
-import { AccessPage } from "./pages/AccessPage";
+import { AccessPageV2 } from "./pages/AccessPageV2";
 import { MyPortalPage } from "./pages/MyPortalPage";
 import { useAppStore } from "./lib/store";
 import { api } from "./lib/api";
@@ -87,7 +87,7 @@ function AccessRoute() {
   const user = useAppStore((state) => state.user);
   if (!token) return <Navigate to="/login" replace />;
   if (!user?.permissions?.includes("users:read")) return <Navigate to="/" replace />;
-  return <StandaloneShell><AccessPage /></StandaloneShell>;
+  return <StandaloneShell><AccessPageV2 /></StandaloneShell>;
 }
 
 function PermissionNavGuard() {
