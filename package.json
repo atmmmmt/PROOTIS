@@ -1,0 +1,20 @@
+{
+  "name": "prootech-system",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Prootech Agency internal enterprise operating system",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api-server & npm run dev --workspace apps/web-dashboard",
+    "dev:api": "npm run dev --workspace apps/api-server",
+    "dev:web": "npm run dev --workspace apps/web-dashboard",
+    "build": "npm run build --workspace apps/api-server && npm run build --workspace apps/web-dashboard",
+    "typecheck": "npm run typecheck --workspace apps/api-server && npm run typecheck --workspace apps/web-dashboard"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
