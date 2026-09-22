@@ -20,6 +20,7 @@ import { auditRouter, financeRouter, hrRouter, partnersRouter, platformRouter, p
 import { growthRouter } from "./modules/growth.routes.js";
 import { docsRouter } from "./modules/docs.routes.js";
 import { specAliasRouter } from "./modules/spec-alias.routes.js";
+import { ownershipRouter } from "./modules/ownership.routes.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +65,7 @@ export function createApp() {
   app.use("/api/v1/finance", financeRouter);
   app.use("/api/v1/hr", hrRouter);
   app.use("/api/v1/partners", partnersRouter);
+  app.use("/api/v1/ownership", ownershipRouter);
   app.use("/api/v1/analytics", analyticsRouter);
   app.use("/api/v1/audit", auditRouter);
   app.use("/api/v1/ai", aiRouter);
