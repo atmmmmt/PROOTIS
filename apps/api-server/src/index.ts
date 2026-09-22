@@ -3,6 +3,7 @@ import { logger } from "./core/logger.js";
 import { connectMongo } from "./db/mongo.js";
 import { hydrateFromMongo } from "./db/persist.js";
 import { db } from "./data/demo-store.js";
+import { ensureOwnershipDefaults, hydrateOwnershipFromMongo } from "./data/ownership-store.js";
 import { createApp } from "./app.js";
 
 const app = createApp();
@@ -15,9 +16,12 @@ async function initializeData() {
   try {
     await connectMongo();
     await hydrateFromMongo(db);
+    await hydrateOwnershipFromMongo();
+    ensureOwnershipDefaults();
     logger.info("Application data initialization complete.");
   } catch (error) {
     logger.error({ error }, "MongoDB initialization failed; continuing with in-memory data.");
+    ensureOwnershipDefaults();
   }
 }
 
