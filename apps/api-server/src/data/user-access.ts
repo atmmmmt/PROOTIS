@@ -104,12 +104,12 @@ export function listAccessUsers() {
 }
 
 function linkBeneficiary(userId: string, beneficiaryId?: string) {
-  if (!beneficiaryId) return;
   for (const beneficiary of ownershipDb.beneficiaries) {
     if (beneficiary.relatedUserId === userId && beneficiary.id !== beneficiaryId) {
       updateOwnership("beneficiaries", String(beneficiary.id), { relatedUserId: undefined }, userId);
     }
   }
+  if (!beneficiaryId) return;
   const beneficiary = ownershipDb.beneficiaries.find((item) => item.id === beneficiaryId);
   if (beneficiary) updateOwnership("beneficiaries", beneficiaryId, { relatedUserId: userId }, userId);
 }
@@ -148,13 +148,13 @@ export function updateAccessUser(id: string, payload: Record<string, any>, actor
   if (payload.fullName !== undefined) update.fullName = String(payload.fullName).trim();
   if (payload.email !== undefined) update.email = String(payload.email).trim().toLowerCase();
   if (payload.phone !== undefined) update.phone = String(payload.phone);
-  if (payload.roles !== undefined) update.roles = cleanRoles(payload.roles);
+  if (payload.roles !== undefined && (cleanRoles(existing.roles).includes("partner") || payload.allowRoleChange === true)) update.roles = cleanRoles(payload.roles);
   if (payload.permissionsOverrides !== undefined) update.permissionsOverrides = cleanPermissions(payload.permissionsOverrides);
   if (payload.deniedPermissions !== undefined) update.deniedPermissions = cleanPermissions(payload.deniedPermissions);
   if (payload.accessScope !== undefined) update.accessScope = cleanScope(payload.accessScope);
   if (payload.locale !== undefined) update.locale = payload.locale === "en" ? "en" : "ar";
   if (payload.mfaEnabled !== undefined) update.mfaEnabled = Boolean(payload.mfaEnabled);
-  if (payload.status !== undefined) update.status = String(payload.status);
+  if (payload.status !== undefined && !cleanRoles(existing.roles).includes("super_admin")) update.status = String(payload.status);
   if (payload.password !== undefined && String(payload.password).length >= 8) update.passwordHash = bcrypt.hashSync(String(payload.password), 10);
   const row = updateRecord("users", id, update) as UserRow | undefined;
   if (!row) return undefined;
@@ -223,7 +223,7 @@ export function createDefaultPartnerAccounts(actorId?: string) {
     const existing = linked ?? (db.users as UserRow[]).find((user) => String(user.email ?? "").toLowerCase() === definition.email);
     if (existing) {
       linkBeneficiary(String(existing.id), definition.beneficiaryId);
-      updateAccessUser(String(existing.id), { roles: ["partner"], accessScope: definition.accessScope }, actorId);
+      updateAccessUser(String(existing.id), { roles: ["partner"], accessScope: definition.accessScope, allowRoleChange: true }, actorId);
       return { fullName: definition.fullName, email: definition.email, status: "existing", password: null };
     }
     const password = generateTemporaryPassword();
