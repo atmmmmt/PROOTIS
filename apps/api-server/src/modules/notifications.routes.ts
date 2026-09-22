@@ -19,9 +19,10 @@ notificationsRouter.patch(
   asyncHandler(async (req, res) => {
     const existing = db.notifications.find((item) => item.id === String(req.params.id));
     if (!existing || existing.userId !== req.user?.id) throw new ApiError(404, "not_found", "Notification not found.");
+    const previousReadAt = (existing as Record<string, unknown>).readAt;
     const row = updateRecord("notifications", String(req.params.id), {
       status: req.body?.status ?? existing.status,
-      readAt: req.body?.status === "read" ? new Date().toISOString() : existing.readAt
+      readAt: req.body?.status === "read" ? new Date().toISOString() : previousReadAt
     });
     ok(res, row);
   })
