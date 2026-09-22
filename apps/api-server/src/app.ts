@@ -21,6 +21,7 @@ import { growthRouter } from "./modules/growth.routes.js";
 import { docsRouter } from "./modules/docs.routes.js";
 import { specAliasRouter } from "./modules/spec-alias.routes.js";
 import { ownershipRouter } from "./modules/ownership.routes.js";
+import { accessRouter } from "./modules/access.routes.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -63,6 +64,7 @@ export function createApp() {
   app.get("/api/v1/health", (_req, res) => ok(res, { status: "ok", service: "api-server" }));
   app.use("/api/v1/docs", docsRouter);
   app.use("/api/v1/auth", authRouter);
+  app.use("/api/v1/access", accessRouter);
   app.use("/api/v1/platform", platformRouter);
   app.use("/api/v1/crm", crmRouter);
   app.use("/api/v1/projects", projectsRouter);
