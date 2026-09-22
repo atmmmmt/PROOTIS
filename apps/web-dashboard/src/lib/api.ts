@@ -134,6 +134,21 @@ export const api = {
   ownershipSaasProducts: () => request<TableResponse<any>>("/ownership/saas-products"),
   ownershipSaasSubscriptions: () => request<TableResponse<any>>("/ownership/saas-subscriptions"),
 
+  // Accounts, permissions, and partner portal
+  accessAccounts: () => request<{ rows: any[]; total: number }>("/access/accounts"),
+  createAccessAccount: (payload: Record<string, unknown>) =>
+    request<any>("/access/accounts", { method: "POST", body: JSON.stringify(payload) }),
+  updateAccessAccount: (id: string, payload: Record<string, unknown>) =>
+    request<any>(`/access/accounts/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  resetAccessPassword: (id: string, password?: string) =>
+    request<{ password: string }>(`/access/accounts/${id}/reset-password`, { method: "POST", body: JSON.stringify(password ? { password } : {}) }),
+  createDefaultPartnerAccounts: () =>
+    request<{ rows: Array<{ fullName: string; email: string; status: string; password: string | null }> }>("/access/accounts/create-default-partners", { method: "POST" }),
+  partnerPortal: (month?: string) =>
+    request<any>(`/access/portal${month ? `?month=${encodeURIComponent(month)}` : ""}`),
+  updatePartnerProject: (projectId: string, payload: Record<string, unknown>) =>
+    request<any>(`/access/portal/projects/${projectId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+
   // AI Chat
   aiChat: (message: string) =>
     request<{ tool: string; answerAr: string; answerEn: string; result: unknown }>("/ai/chat", {
