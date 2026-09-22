@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { UserSession } from "@prootech/shared-types";
 import { requireAuth, requirePermission } from "../core/auth.js";
 import { ApiError, asyncHandler, ok } from "../core/http.js";
 import { db, updateRecord } from "../data/demo-store.js";
@@ -35,7 +36,7 @@ function inRange(value: unknown, start: Date, end: Date) {
   return Number.isFinite(date.getTime()) && date >= start && date < end;
 }
 
-function projectAllowed(projectId: string, user: Express.Request["user"]) {
+function projectAllowed(projectId: string, user?: UserSession) {
   if (!user) return false;
   const scope = user.accessScope ?? {};
   if (scope.canViewAllProjects) return true;
@@ -148,7 +149,10 @@ function companyGrowthSnapshot() {
 accessRouter.get(
   "/accounts",
   requirePermission("users:read"),
-  asyncHandler(async (_req, res) => ok(res, { rows: listAccessUsers(), total: listAccessUsers().length }))
+  asyncHandler(async (_req, res) => {
+    const rows = listAccessUsers();
+    ok(res, { rows, total: rows.length });
+  })
 );
 
 accessRouter.post(
