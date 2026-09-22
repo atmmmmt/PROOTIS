@@ -177,3 +177,42 @@ export const SaasSubscriptionModel = model(
     { timestamps: true }
   )
 );
+
+export const OwnershipSettingModel = model(
+  "OwnershipSetting",
+  new Schema(
+    {
+      ...base,
+      key: { type: String, index: true, unique: true, required: true },
+      value: Schema.Types.Mixed,
+      notes: String
+    },
+    { timestamps: true }
+  )
+);
+
+export const PersonalContributionModel = model(
+  "PersonalContribution",
+  new Schema(
+    {
+      ...base,
+      contributorBeneficiaryId: { type: String, index: true, required: true },
+      contributorName: String,
+      employerName: String,
+      salaryMonth: { type: String, index: true },
+      salaryReceivedAt: { type: Date, index: true },
+      salaryAmount: Number,
+      ratePercent: Number,
+      contributionAmount: Number,
+      paidAmount: Number,
+      remainingAmount: Number,
+      currencyCode: String,
+      targetBeneficiaryId: { type: String, index: true },
+      paidAt: { type: Date, index: true },
+      paymentMethod: String,
+      reference: String,
+      note: String
+    },
+    { timestamps: true }
+  )
+);
