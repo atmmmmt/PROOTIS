@@ -210,6 +210,7 @@ export const PersonalContributionModel = model(
       targetBeneficiaryId: { type: String, index: true },
       paidAt: { type: Date, index: true },
       paymentMethod: String,
+      payments: [Schema.Types.Mixed],
       reference: String,
       note: String
     },
