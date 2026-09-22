@@ -4,7 +4,7 @@ import { z } from "zod";
 import { ok, ApiError, asyncHandler } from "../core/http.js";
 import { requireAuth, signAccessToken, signRefreshToken, revokeToken, type AccessTokenPayload } from "../core/auth.js";
 import { env } from "../config/env.js";
-import { findUserByEmail, findUserById, verifyUserPassword } from "../data/demo-store.js";
+import { findCredentialUserByEmail, getUserSession, toUserSession, verifyAccessPassword } from "../data/user-access.js";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -21,13 +21,13 @@ authRouter.post(
   "/login",
   asyncHandler(async (req, res) => {
     const input = loginSchema.parse(req.body);
-    const user = findUserByEmail(input.email);
-    if (!user || !verifyUserPassword(user, input.password)) {
+    const user = findCredentialUserByEmail(input.email);
+    if (!user || !verifyAccessPassword(user, input.password)) {
       throw new ApiError(401, "invalid_credentials", "Email or password is incorrect.");
     }
 
-    const payload = { sub: user.id, organizationId: user.organizationId, email: user.email };
-    const { passwordHash: _passwordHash, ...session } = user;
+    const session = toUserSession(user);
+    const payload = { sub: session.id, organizationId: session.organizationId, email: session.email };
     ok(res, {
       user: session,
       accessToken: signAccessToken(payload),
@@ -42,7 +42,7 @@ authRouter.post(
     const input = refreshSchema.parse(req.body);
     try {
       const payload = jwt.verify(input.refreshToken, env.JWT_REFRESH_SECRET) as AccessTokenPayload;
-      const user = findUserById(payload.sub);
+      const user = getUserSession(payload.sub);
       if (!user) throw new ApiError(401, "invalid_session", "User session no longer exists.");
 
       const nextPayload = { sub: user.id, organizationId: user.organizationId, email: user.email };
