@@ -49,14 +49,14 @@ function normalize(doc: Record<string, any>) {
   return { id: String(_id ?? rest.id ?? ""), ...rest };
 }
 
-export function listOwnership(name: OwnershipCollection) {
+export function listOwnership(name: OwnershipCollection): Array<Record<string, any>> {
   return ownershipDb[name];
 }
 
-export function createOwnership(name: OwnershipCollection, payload: Record<string, any>, actorId?: string) {
+export function createOwnership(name: OwnershipCollection, payload: Record<string, any>, actorId?: string): Record<string, any> {
   const id = String(payload.id ?? `${name.slice(0, 4)}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
   const now = new Date().toISOString();
-  const row = {
+  const row: Record<string, any> = {
     organizationId,
     status: payload.status ?? "active",
     createdAt: now,
@@ -75,7 +75,7 @@ export function createOwnership(name: OwnershipCollection, payload: Record<strin
   return row;
 }
 
-export function updateOwnership(name: OwnershipCollection, id: string, payload: Record<string, any>, actorId?: string) {
+export function updateOwnership(name: OwnershipCollection, id: string, payload: Record<string, any>, actorId?: string): Record<string, any> | undefined {
   const rows = ownershipDb[name];
   const index = rows.findIndex((item) => String(item.id) === id);
   if (index < 0) return undefined;
