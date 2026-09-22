@@ -1,16 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
-import type { Permission, RoleCode } from "@prootech/shared-types";
+import type { UserSession } from "@prootech/shared-types";
 
-export interface AuthUser {
-  id: string;
-  organizationId: string;
-  email: string;
-  fullName: string;
-  roles: RoleCode[];
-  permissions: Permission[];
-  locale: "ar" | "en";
-}
+export type AuthUser = UserSession;
 
 declare module "express-serve-static-core" {
   interface Request {
