@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { BriefcaseBusiness, CircleDollarSign, KeyRound, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, CircleDollarSign, KeyRound, Landmark, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@prootech/shared-types";
 import { App as LegacyApp } from "./App";
 import { AccessPageV2 } from "./pages/AccessPageV2";
 import { MyPortalPage } from "./pages/MyPortalPage";
+import { PersonalContributionsPage } from "./pages/PersonalContributionsPage";
 import { useAppStore } from "./lib/store";
 import { api } from "./lib/api";
 
@@ -14,6 +15,7 @@ const moduleLinks: Array<{ to: string; permission: Permission; ar: string; en: s
   { to: "/crm", permission: "crm:read", ar: "CRM", en: "CRM", icon: BriefcaseBusiness },
   { to: "/projects", permission: "projects:read", ar: "المشاريع", en: "Projects", icon: BriefcaseBusiness },
   { to: "/finance", permission: "finance:read", ar: "المالية", en: "Finance", icon: CircleDollarSign },
+  { to: "/personal-contributions", permission: "finance:read", ar: "مساهمة الدخل", en: "Personal Contribution", icon: Landmark },
   { to: "/ai", permission: "ai:use", ar: "المساعد الذكي", en: "AI", icon: Sparkles }
 ];
 
@@ -21,7 +23,7 @@ function requiredPermission(pathname: string): Permission | undefined {
   if (pathname === "/") return "analytics:read";
   if (pathname.startsWith("/crm")) return "crm:read";
   if (pathname.startsWith("/projects")) return "projects:read";
-  if (pathname.startsWith("/finance") || pathname.startsWith("/ownership")) return "finance:read";
+  if (pathname.startsWith("/finance") || pathname.startsWith("/ownership") || pathname.startsWith("/personal-contributions")) return "finance:read";
   if (pathname.startsWith("/hr")) return "hr:read";
   if (pathname.startsWith("/partners")) return "partners:read";
   if (pathname.startsWith("/ai-sales")) return "sales:automation";
@@ -90,6 +92,14 @@ function AccessRoute() {
   return <StandaloneShell><AccessPageV2 /></StandaloneShell>;
 }
 
+function PersonalContributionsRoute() {
+  const token = useAppStore((state) => state.accessToken);
+  const user = useAppStore((state) => state.user);
+  if (!token) return <Navigate to="/login" replace />;
+  if (!user?.permissions?.includes("finance:read")) return <Navigate to="/" replace />;
+  return <StandaloneShell><PersonalContributionsPage /></StandaloneShell>;
+}
+
 function PermissionNavGuard() {
   const user = useAppStore((state) => state.user);
   const location = useLocation();
@@ -124,6 +134,12 @@ function SmartLegacy() {
           الحسابات والصلاحيات
         </a>
       )}
+      {token && user?.permissions?.includes("finance:read") && (
+        <a href="/personal-contributions" className="fixed bottom-5 end-5 z-50 inline-flex items-center gap-2 rounded-xl bg-prootech-violet px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition hover:bg-prootech-violet-light">
+          <Landmark size={15} />
+          مساهمة الدخل الشخصي
+        </a>
+      )}
     </>
   );
 }
@@ -133,6 +149,7 @@ export function EnhancedApp() {
     <Routes>
       <Route path="/access" element={<AccessRoute />} />
       <Route path="/my-portal" element={<PartnerPortalRoute />} />
+      <Route path="/personal-contributions" element={<PersonalContributionsRoute />} />
       <Route path="/*" element={<SmartLegacy />} />
     </Routes>
   );
