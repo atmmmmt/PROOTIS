@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { KeyRound, LayoutDashboard, LogOut } from "lucide-react";
 import { App as LegacyApp } from "./App";
@@ -6,7 +7,7 @@ import { MyPortalPage } from "./pages/MyPortalPage";
 import { useAppStore } from "./lib/store";
 import { api } from "./lib/api";
 
-function StandaloneShell({ children, showBack = true }: { children: React.ReactNode; showBack?: boolean }) {
+function StandaloneShell({ children, showBack = true }: { children: ReactNode; showBack?: boolean }) {
   const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
   const locale = useAppStore((state) => state.locale);
