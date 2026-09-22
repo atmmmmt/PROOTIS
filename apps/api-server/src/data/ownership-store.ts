@@ -3,6 +3,8 @@ import {
   DistributionReceiptModel,
   DistributionTemplateModel,
   OwnershipBeneficiaryModel,
+  OwnershipSettingModel,
+  PersonalContributionModel,
   PayoutEventModel,
   ProjectDistributionProfileModel,
   SaasProductModel,
@@ -21,7 +23,9 @@ export const ownershipDb = {
   allocations: [] as Array<Record<string, any>>,
   payoutEvents: [] as Array<Record<string, any>>,
   saasProducts: [] as Array<Record<string, any>>,
-  saasSubscriptions: [] as Array<Record<string, any>>
+  saasSubscriptions: [] as Array<Record<string, any>>,
+  settings: [] as Array<Record<string, any>>,
+  personalContributions: [] as Array<Record<string, any>>
 };
 
 type OwnershipCollection = keyof typeof ownershipDb;
@@ -35,7 +39,9 @@ const models = {
   allocations: DistributionAllocationModel,
   payoutEvents: PayoutEventModel,
   saasProducts: SaasProductModel,
-  saasSubscriptions: SaasSubscriptionModel
+  saasSubscriptions: SaasSubscriptionModel,
+  settings: OwnershipSettingModel,
+  personalContributions: PersonalContributionModel
 } as const;
 
 const organizationId = "org_prootech";
@@ -130,6 +136,13 @@ export function ensureOwnershipDefaults() {
   ensure("beneficiaries", "ben_abdullatif", { name: "عبد اللطيف رضا", code: "ABDULLATIF", beneficiaryType: "architecture_partner", status: "active", notes: "مسؤول قسم العمارة" });
   ensure("beneficiaries", "ben_work", { name: "فريق العمل / التنفيذ", code: "WORK_POOL", beneficiaryType: "work_pool", status: "active" });
   ensure("beneficiaries", "ben_product", { name: "صندوق المنتج / التشغيل", code: "PRODUCT_POOL", beneficiaryType: "product_pool", status: "active" });
+
+  ensure("settings", "setting_personal_salary_contribution", {
+    key: "personalSalaryContribution",
+    value: { ratePercent: 10, targetBeneficiaryId: "ben_office" },
+    notes: "نسبة مساهمة الدخل الشخصي الشهرية التي تذهب حصراً إلى صندوق المكتب",
+    status: "active"
+  });
 
   ensure("serviceCatalog", "dept_programming", { kind: "department", name: "البرمجة", code: "PROGRAMMING", sortOrder: 10, status: "active" });
   ensure("serviceCatalog", "svc_web", { kind: "service", parentId: "dept_programming", name: "مواقع وأنظمة ويب", code: "WEB", sortOrder: 11, status: "active" });
