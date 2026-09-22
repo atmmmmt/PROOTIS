@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { Permission } from "@prootech/shared-types";
 import { env } from "../config/env.js";
 import { ApiError } from "./http.js";
-import { findUserById } from "../data/demo-store.js";
+import { getUserSession } from "../data/user-access.js";
 
 // In-memory token blocklist — swap with Redis Set in production
 const revokedTokens = new Set<string>();
@@ -43,7 +43,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
     if (payload.jti && isRevoked(payload.jti)) {
       throw new ApiError(401, "token_revoked", "Token has been revoked.");
     }
-    const user = findUserById(payload.sub);
+    const user = getUserSession(payload.sub);
     if (!user) throw new ApiError(401, "invalid_session", "User session no longer exists.");
     req.user = user;
     next();
