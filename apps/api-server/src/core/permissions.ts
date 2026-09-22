@@ -18,6 +18,7 @@ export const rolePermissions: Record<RoleCode, Permission[]> = {
     "hr:payroll",
     "partners:read",
     "partners:write",
+    "partner:portal",
     "analytics:read",
     "audit:read",
     "ai:use"
@@ -32,6 +33,7 @@ export const rolePermissions: Record<RoleCode, Permission[]> = {
   hr_admin: ["hr:read", "hr:write", "hr:payroll", "analytics:read", "audit:read", "ai:use"],
   hr_ops: ["hr:read", "hr:write", "analytics:read", "ai:use"],
   partner_manager: ["partners:read", "partners:write", "crm:read", "finance:read", "analytics:read", "ai:use"],
+  partner: ["partner:portal"],
   auditor: ["crm:read", "projects:read", "finance:read", "hr:read", "partners:read", "analytics:read", "audit:read"],
   employee: ["projects:read", "hr:read", "ai:use"],
   ai_service_account: ["ai:use"]
