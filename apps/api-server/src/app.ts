@@ -35,6 +35,10 @@ function resolveWebDist() {
 export function createApp() {
   const app = express();
 
+  // Hostinger runs the Node process behind a reverse proxy. Trust the nearest
+  // proxy so req.ip and express-rate-limit use X-Forwarded-For correctly.
+  app.set("trust proxy", 1);
+
   app.use(helmet());
   app.use(
     cors({
