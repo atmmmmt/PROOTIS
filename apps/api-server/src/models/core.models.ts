@@ -102,6 +102,8 @@ export const UserModel = model(
       passwordHash: String,
       roles: [String],
       permissionsOverrides: [String],
+      deniedPermissions: [String],
+      accessScope: Schema.Types.Mixed,
       lastLoginAt: Date,
       mfaEnabled: Boolean,
       locale: { type: String, default: "ar" }
