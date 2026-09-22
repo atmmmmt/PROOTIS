@@ -5,17 +5,20 @@ import { hydrateFromMongo } from "./db/persist.js";
 import { db } from "./data/demo-store.js";
 import { createApp } from "./app.js";
 
-async function bootstrap() {
-  await connectMongo();
-  await hydrateFromMongo(db);
+const app = createApp();
 
-  const app = createApp();
-  app.listen(env.PORT, () => {
-    logger.info(`API server listening on http://localhost:${env.PORT}`);
-  });
+app.listen(env.PORT, () => {
+  logger.info(`API server listening on http://localhost:${env.PORT}`);
+});
+
+async function initializeData() {
+  try {
+    await connectMongo();
+    await hydrateFromMongo(db);
+    logger.info("Application data initialization complete.");
+  } catch (error) {
+    logger.error({ error }, "MongoDB initialization failed; continuing with in-memory data.");
+  }
 }
 
-bootstrap().catch((error) => {
-  logger.error({ error }, "Failed to start API server");
-  process.exit(1);
-});
+void initializeData();
