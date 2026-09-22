@@ -4,6 +4,9 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { env } from "./config/env.js";
 import { requestContext } from "./core/request-context.js";
 import { auditMiddleware } from "./core/audit.js";
@@ -17,6 +20,16 @@ import { auditRouter, financeRouter, hrRouter, partnersRouter, platformRouter, p
 import { growthRouter } from "./modules/growth.routes.js";
 import { docsRouter } from "./modules/docs.routes.js";
 import { specAliasRouter } from "./modules/spec-alias.routes.js";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
+function resolveWebDist() {
+  const candidates = [
+    path.resolve(currentDir, "public"),
+    path.resolve(currentDir, "../../web-dashboard/dist")
+  ];
+  return candidates.find((candidate) => existsSync(path.join(candidate, "index.html")));
+}
 
 export function createApp() {
   const app = express();
@@ -57,6 +70,17 @@ export function createApp() {
   app.use("/api/v1/ai-sales", aiSalesRouter);
   app.use("/api/v1/growth", growthRouter);
   app.use("/api/v1", specAliasRouter);
+
+  if (env.NODE_ENV === "production") {
+    const webDist = resolveWebDist();
+    if (webDist) {
+      app.use(express.static(webDist, { index: false }));
+      app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api/")) return next();
+        return res.sendFile(path.join(webDist, "index.html"));
+      });
+    }
+  }
 
   app.use(errorHandler);
   return app;
