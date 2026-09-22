@@ -108,6 +108,32 @@ export const api = {
   deleteProjectFile: (projectId: string, fileId: string) =>
     request(`/projects/${projectId}/files/${fileId}`, { method: "DELETE" }),
 
+  // Ownership, financial distribution, settlements, and SaaS
+  ownershipOverview: (month?: string) =>
+    request<any>(`/ownership/overview${month ? `?month=${encodeURIComponent(month)}` : ""}`),
+  ownershipSettlement: (month: string) =>
+    request<any>(`/ownership/monthly-settlement?month=${encodeURIComponent(month)}`),
+  ownershipReceipts: () => request<TableResponse<any>>("/ownership/receipts"),
+  createOwnershipReceipt: (payload: Record<string, unknown>) =>
+    request<any>("/ownership/receipts", { method: "POST", body: JSON.stringify(payload) }),
+  reverseOwnershipReceipt: (id: string, reason?: string) =>
+    request<any>(`/ownership/receipts/${id}/reverse`, { method: "POST", body: JSON.stringify({ reason }) }),
+  payOwnershipLine: (allocationId: string, lineId: string, payload: Record<string, unknown> = {}) =>
+    request<any>(`/ownership/allocations/${allocationId}/lines/${lineId}/pay`, { method: "POST", body: JSON.stringify(payload) }),
+  payOwnershipSettlement: (payload: Record<string, unknown>) =>
+    request<any>("/ownership/settlements/pay", { method: "POST", body: JSON.stringify(payload) }),
+  ownershipBeneficiaries: () => request<TableResponse<any>>("/ownership/beneficiaries"),
+  ownershipStructure: () => request<TableResponse<any>>("/ownership/structure"),
+  ownershipTemplates: () => request<TableResponse<any>>("/ownership/templates"),
+  createOwnershipTemplate: (payload: Record<string, unknown>) =>
+    request<any>("/ownership/templates", { method: "POST", body: JSON.stringify(payload) }),
+  updateOwnershipTemplate: (id: string, payload: Record<string, unknown>) =>
+    request<any>(`/ownership/templates/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  upsertProjectDistributionProfile: (projectId: string, payload: Record<string, unknown>) =>
+    request<any>(`/ownership/projects/${projectId}/profile`, { method: "POST", body: JSON.stringify(payload) }),
+  ownershipSaasProducts: () => request<TableResponse<any>>("/ownership/saas-products"),
+  ownershipSaasSubscriptions: () => request<TableResponse<any>>("/ownership/saas-subscriptions"),
+
   // AI Chat
   aiChat: (message: string) =>
     request<{ tool: string; answerAr: string; answerEn: string; result: unknown }>("/ai/chat", {
