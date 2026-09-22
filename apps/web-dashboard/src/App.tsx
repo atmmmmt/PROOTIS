@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   Bell, Bot, BriefcaseBusiness, Building2, ChevronsLeft,
   CircleDollarSign, ClipboardList, Languages, LayoutDashboard,
-  Lock, Radar, Menu, Search, ShieldCheck, TrendingUp, Users, WalletCards
+  Lock, Radar, Menu, Search, Settings2, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
 import type { DashboardPayload, Locale } from "@prootech/shared-types";
 import { api, type TableResponse } from "./lib/api";
@@ -24,6 +24,7 @@ import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { PartnersPage } from "./pages/PartnersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { GrowthPage } from "./pages/GrowthPage";
+import { OwnershipPage } from "./pages/OwnershipPage";
 
 function useLocale() {
   const locale = useAppStore((state) => state.locale);
@@ -102,6 +103,7 @@ const navItems = [
   { to: "/crm", label: "crm", icon: BriefcaseBusiness },
   { to: "/projects", label: "projects", icon: ClipboardList },
   { to: "/finance", label: "finance", icon: CircleDollarSign },
+  { to: "/ownership", label: "shareRules", icon: Settings2 },
   { to: "/hr", label: "hr", icon: Users },
   { to: "/partners", label: "partners", icon: WalletCards },
   { to: "/ai-sales", label: "aiSales", icon: Radar },
@@ -135,7 +137,6 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-prootech-muted text-prootech-black">
-      {/* Sidebar */}
       <aside className={`fixed inset-y-0 z-40 hidden border-prootech-line bg-white shadow-card transition-all duration-300 lg:flex lg:flex-col ${isAr ? "right-0 border-l" : "left-0 border-r"} ${sidebarOpen ? "w-[220px]" : "w-[60px]"}`}>
         <div className={`flex h-14 shrink-0 items-center border-b border-prootech-line ${sidebarOpen ? "justify-between px-4" : "justify-center px-2"}`}>
           <div className="flex min-w-0 items-center gap-2.5">
@@ -170,9 +171,7 @@ function AppShell() {
         )}
       </aside>
 
-      {/* Main content */}
       <div className={`transition-all duration-300 ${sidebarOpen ? (isAr ? "lg:mr-[220px]" : "lg:ml-[220px]") : isAr ? "lg:mr-[60px]" : "lg:ml-[60px]"}`}>
-        {/* Header */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-prootech-line bg-white/95 px-4 shadow-sm backdrop-blur-md">
           <button className="rounded-lg p-1.5 text-prootech-text-muted hover:bg-prootech-muted lg:hidden" onClick={toggleSidebar} aria-label="menu">
             <Menu size={18} />
@@ -226,6 +225,7 @@ function AppShell() {
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/finance" element={<FinancePage />} />
+            <Route path="/ownership" element={<OwnershipPage />} />
             <Route path="/hr" element={<HrPage />} />
             <Route path="/partners" element={<PartnersPage />} />
             <Route path="/ai-sales" element={<AiSalesPage />} />
