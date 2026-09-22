@@ -13,6 +13,7 @@ export type RoleCode =
   | "hr_admin"
   | "hr_ops"
   | "partner_manager"
+  | "partner"
   | "auditor"
   | "employee"
   | "ai_service_account";
@@ -34,9 +35,19 @@ export type Permission =
   | "hr:payroll"
   | "partners:read"
   | "partners:write"
+  | "partner:portal"
   | "analytics:read"
   | "audit:read"
   | "ai:use";
+
+export interface UserAccessScope {
+  canViewAllProjects?: boolean;
+  departmentIds?: string[];
+  projectIds?: string[];
+  canViewCompanyGrowth?: boolean;
+  canViewProjectFinancials?: boolean;
+  editableProjectFields?: Array<"status" | "healthStatus" | "description" | "startDate" | "endDate">;
+}
 
 export interface ApiEnvelope<T> {
   data: T;
@@ -59,6 +70,9 @@ export interface UserSession {
   email: string;
   roles: RoleCode[];
   permissions: Permission[];
+  permissionsOverrides?: Permission[];
+  deniedPermissions?: Permission[];
+  accessScope?: UserAccessScope;
   locale: Locale;
   mfaEnabled: boolean;
 }
