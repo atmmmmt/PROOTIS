@@ -21,6 +21,7 @@ import { growthRouter } from "./modules/growth.routes.js";
 import { docsRouter } from "./modules/docs.routes.js";
 import { specAliasRouter } from "./modules/spec-alias.routes.js";
 import { ownershipRouter } from "./modules/ownership.routes.js";
+import { personalContributionsRouter } from "./modules/personal-contributions.routes.js";
 import { accessRouter } from "./modules/access.routes.js";
 import { notificationsRouter } from "./modules/notifications.routes.js";
 
@@ -73,6 +74,7 @@ export function createApp() {
   app.use("/api/v1/finance", financeRouter);
   app.use("/api/v1/hr", hrRouter);
   app.use("/api/v1/partners", partnersRouter);
+  app.use("/api/v1/ownership/personal-contributions", personalContributionsRouter);
   app.use("/api/v1/ownership", ownershipRouter);
   app.use("/api/v1/analytics", analyticsRouter);
   app.use("/api/v1/audit", auditRouter);
