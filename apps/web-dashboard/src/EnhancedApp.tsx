@@ -1,14 +1,15 @@
+import { lazy, Suspense, useEffect } from "react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { BriefcaseBusiness, CircleDollarSign, KeyRound, Landmark, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@prootech/shared-types";
-import { App as LegacyApp } from "./App";
-import { AccessPageV2 } from "./pages/AccessPageV2";
-import { MyPortalPage } from "./pages/MyPortalPage";
-import { PersonalContributionsPage } from "./pages/PersonalContributionsPage";
 import { useAppStore } from "./lib/store";
 import { api } from "./lib/api";
+
+const LegacyApp = lazy(() => import("./App").then((module) => ({ default: module.App })));
+const AccessPageV2 = lazy(() => import("./pages/AccessPageV2").then((module) => ({ default: module.AccessPageV2 })));
+const MyPortalPage = lazy(() => import("./pages/MyPortalPage").then((module) => ({ default: module.MyPortalPage })));
+const PersonalContributionsPage = lazy(() => import("./pages/PersonalContributionsPage").then((module) => ({ default: module.PersonalContributionsPage })));
 
 const moduleLinks: Array<{ to: string; permission: Permission; ar: string; en: string; icon: any }> = [
   { to: "/", permission: "analytics:read", ar: "لوحة الإدارة", en: "Executive", icon: LayoutDashboard },
@@ -31,6 +32,17 @@ function requiredPermission(pathname: string): Permission | undefined {
   if (pathname.startsWith("/audit")) return "audit:read";
   if (pathname.startsWith("/ai")) return "ai:use";
   return undefined;
+}
+
+function PageLoader() {
+  return (
+    <div className="grid min-h-[320px] place-items-center">
+      <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
+        جاري تحميل القسم...
+      </div>
+    </div>
+  );
 }
 
 function StandaloneShell({ children, showBack = true }: { children: ReactNode; showBack?: boolean }) {
@@ -81,7 +93,7 @@ function PartnerPortalRoute() {
   const user = useAppStore((state) => state.user);
   if (!token) return <Navigate to="/login" replace />;
   if (!user?.permissions?.includes("partner:portal")) return <Navigate to="/" replace />;
-  return <StandaloneShell showBack={Boolean(user.permissions.includes("analytics:read"))}><MyPortalPage /></StandaloneShell>;
+  return <StandaloneShell showBack={Boolean(user.permissions.includes("analytics:read"))}><Suspense fallback={<PageLoader />}><MyPortalPage /></Suspense></StandaloneShell>;
 }
 
 function AccessRoute() {
@@ -89,7 +101,7 @@ function AccessRoute() {
   const user = useAppStore((state) => state.user);
   if (!token) return <Navigate to="/login" replace />;
   if (!user?.permissions?.includes("users:read")) return <Navigate to="/" replace />;
-  return <StandaloneShell><AccessPageV2 /></StandaloneShell>;
+  return <StandaloneShell><Suspense fallback={<PageLoader />}><AccessPageV2 /></Suspense></StandaloneShell>;
 }
 
 function PersonalContributionsRoute() {
@@ -97,7 +109,7 @@ function PersonalContributionsRoute() {
   const user = useAppStore((state) => state.user);
   if (!token) return <Navigate to="/login" replace />;
   if (!user?.permissions?.includes("finance:read")) return <Navigate to="/" replace />;
-  return <StandaloneShell><PersonalContributionsPage /></StandaloneShell>;
+  return <StandaloneShell><Suspense fallback={<PageLoader />}><PersonalContributionsPage /></Suspense></StandaloneShell>;
 }
 
 function PermissionNavGuard() {
@@ -126,7 +138,7 @@ function SmartLegacy() {
 
   return (
     <>
-      <LegacyApp />
+      <Suspense fallback={<PageLoader />}><LegacyApp /></Suspense>
       <PermissionNavGuard />
       {token && user?.permissions?.includes("users:read") && (
         <a href="/access" className="fixed bottom-5 start-5 z-50 inline-flex items-center gap-2 rounded-xl bg-prootech-black px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition hover:bg-prootech-violet">
