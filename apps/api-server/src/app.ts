@@ -8,6 +8,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./config/env.js";
+import { logger } from "./core/logger.js";
 import { requestContext } from "./core/request-context.js";
 import { auditMiddleware } from "./core/audit.js";
 import { errorHandler, ok } from "./core/http.js";
@@ -41,6 +42,7 @@ export function createApp() {
   // Hostinger runs the Node process behind a reverse proxy. Trust the nearest
   // proxy so req.ip and express-rate-limit use X-Forwarded-For correctly.
   app.set("trust proxy", 1);
+  app.disable("x-powered-by");
 
   app.use(helmet());
   app.use(
@@ -50,10 +52,39 @@ export function createApp() {
     })
   );
   app.use(compression());
+
+  // Static assets do not need JSON parsing, UUID generation, rate limiting, or
+  // audit middleware. Keep those costs scoped to the API only.
+  if (env.NODE_ENV === "production") {
+    const webDist = resolveWebDist();
+    if (webDist) {
+      app.use(
+        express.static(webDist, {
+          index: false,
+          setHeaders(res, filePath) {
+            const isHashedAsset = filePath.includes(`${path.sep}assets${path.sep}`);
+            res.setHeader(
+              "Cache-Control",
+              isHashedAsset
+                ? "public, max-age=31536000, immutable"
+                : "public, max-age=3600"
+            );
+          }
+        })
+      );
+    }
+  }
+
   app.use(express.json({ limit: "2mb" }));
-  app.use(morgan("tiny"));
-  app.use(requestContext);
   app.use(
+    morgan("tiny", {
+      skip: (req) => env.NODE_ENV === "production" && !req.path.startsWith("/api/")
+    })
+  );
+
+  app.use("/api/v1", requestContext);
+  app.use(
+    "/api/v1",
     rateLimit({
       windowMs: 60_000,
       limit: 180,
@@ -61,7 +92,20 @@ export function createApp() {
       legacyHeaders: false
     })
   );
-  app.use(auditMiddleware);
+  app.use("/api/v1", (req, res, next) => {
+    const started = Date.now();
+    res.on("finish", () => {
+      const durationMs = Date.now() - started;
+      if (durationMs >= 750) {
+        logger.warn(
+          { method: req.method, path: req.originalUrl, statusCode: res.statusCode, durationMs },
+          "Slow API request"
+        );
+      }
+    });
+    next();
+  });
+  app.use("/api/v1", auditMiddleware);
 
   app.get("/api/v1/health", (_req, res) => ok(res, { status: "ok", service: "api-server" }));
   app.use("/api/v1/docs", docsRouter);
@@ -86,9 +130,9 @@ export function createApp() {
   if (env.NODE_ENV === "production") {
     const webDist = resolveWebDist();
     if (webDist) {
-      app.use(express.static(webDist, { index: false }));
       app.get("*", (req, res, next) => {
         if (req.path.startsWith("/api/")) return next();
+        res.setHeader("Cache-Control", "no-cache");
         return res.sendFile(path.join(webDist, "index.html"));
       });
     }
