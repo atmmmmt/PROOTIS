@@ -37,9 +37,11 @@ function requiredPermission(pathname: string): Permission | undefined {
 function PageLoader() {
   return (
     <div className="grid min-h-[320px] place-items-center">
-      <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
-        جاري تحميل القسم...
+      <div className="rounded-2xl border border-prootech-line bg-white/90 px-5 py-4 shadow-card">
+        <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
+          جاري تحميل القسم...
+        </div>
       </div>
     </div>
   );
@@ -55,35 +57,40 @@ function StandaloneShell({ children, showBack = true }: { children: ReactNode; s
   const availableModules = moduleLinks.filter((item) => user?.permissions?.includes(item.permission));
 
   return (
-    <div className="min-h-screen bg-prootech-muted text-prootech-black">
-      <header className="sticky top-0 z-30 border-b border-prootech-line bg-white shadow-sm">
-        <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+    <div className="min-h-screen bg-prootech-canvas text-prootech-black">
+      <header className="sticky top-0 z-30 border-b border-prootech-line bg-white/85 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-[1480px] items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-prootech-violet text-xs font-bold text-white">P</div>
-            <span className="text-sm font-semibold">Prootech OS</span>
+            <div className="grid h-10 w-10 place-items-center rounded-[14px] bg-violet-gradient text-sm font-bold text-white shadow-[0_10px_28px_rgba(99,0,255,.28)]">P</div>
+            <div className="hidden sm:block">
+              <span className="block text-sm font-semibold tracking-[-0.02em]">Prootech OS</span>
+              <span className="mt-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-prootech-text-subtle">Partner Workspace</span>
+            </div>
             {showBack && (
-              <button onClick={() => navigate("/")} className="ms-2 inline-flex items-center gap-2 rounded-lg border border-prootech-line px-3 py-1.5 text-xs text-prootech-text-muted hover:bg-prootech-muted">
+              <button onClick={() => navigate("/")} className="ms-2 inline-flex items-center gap-2 rounded-xl border border-prootech-line bg-white px-3 py-2 text-xs font-medium text-prootech-text-muted shadow-sm hover:border-prootech-violet/20 hover:bg-prootech-violet-soft hover:text-prootech-violet">
                 <LayoutDashboard size={14} /> {locale === "ar" ? "الرئيسية" : "Home"}
               </button>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setLocale(locale === "ar" ? "en" : "ar")} className="rounded-lg border border-prootech-line px-3 py-1.5 text-xs font-medium">{locale === "ar" ? "EN" : "AR"}</button>
-            <span className="hidden text-xs text-prootech-text-muted sm:inline">{user?.fullName}</span>
-            <button onClick={logout} className="rounded-lg border border-prootech-line p-2 text-prootech-text-muted hover:bg-prootech-muted" title="Logout"><LogOut size={15} /></button>
+            <button onClick={() => setLocale(locale === "ar" ? "en" : "ar")} className="rounded-xl border border-prootech-line bg-white px-3 py-2 text-xs font-medium shadow-sm hover:bg-prootech-muted">{locale === "ar" ? "EN" : "AR"}</button>
+            <span className="hidden rounded-xl bg-prootech-muted px-3 py-2 text-xs font-medium text-prootech-text-muted md:inline">{user?.fullName}</span>
+            <button onClick={logout} className="grid h-9 w-9 place-items-center rounded-xl border border-prootech-line bg-white text-prootech-text-muted shadow-sm hover:border-red-100 hover:bg-red-50 hover:text-red-600" title="Logout"><LogOut size={15} /></button>
           </div>
         </div>
         {user?.permissions?.includes("partner:portal") && availableModules.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto border-t border-prootech-line px-4 py-2 sm:px-6">
-            <button onClick={() => navigate("/my-portal")} className="shrink-0 rounded-lg bg-prootech-violet-soft px-3 py-1.5 text-xs font-medium text-prootech-violet">{locale === "ar" ? "حسابي" : "My Portal"}</button>
-            {availableModules.map((item) => {
-              const Icon = item.icon;
-              return <button key={item.to} onClick={() => navigate(item.to)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-prootech-line px-3 py-1.5 text-xs text-prootech-text-muted hover:bg-prootech-muted"><Icon size={13} />{locale === "ar" ? item.ar : item.en}</button>;
-            })}
+          <div className="border-t border-prootech-line/80 bg-white/65">
+            <div className="mx-auto flex max-w-[1480px] gap-2 overflow-x-auto px-4 py-2.5 sm:px-6">
+              <button onClick={() => navigate("/my-portal")} className="shrink-0 rounded-xl bg-prootech-violet px-3.5 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(99,0,255,.20)]">{locale === "ar" ? "حسابي" : "My Portal"}</button>
+              {availableModules.map((item) => {
+                const Icon = item.icon;
+                return <button key={item.to} onClick={() => navigate(item.to)} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-prootech-line bg-white px-3.5 py-2 text-xs font-medium text-prootech-text-muted shadow-sm hover:border-prootech-violet/20 hover:bg-prootech-violet-soft hover:text-prootech-violet"><Icon size={13} />{locale === "ar" ? item.ar : item.en}</button>;
+              })}
+            </div>
           </div>
         )}
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-[1480px] px-4 py-7 sm:px-6 lg:py-9">{children}</main>
     </div>
   );
 }
@@ -141,13 +148,13 @@ function SmartLegacy() {
       <Suspense fallback={<PageLoader />}><LegacyApp /></Suspense>
       <PermissionNavGuard />
       {token && user?.permissions?.includes("users:read") && (
-        <a href="/access" className="fixed bottom-5 start-5 z-50 inline-flex items-center gap-2 rounded-xl bg-prootech-black px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition hover:bg-prootech-violet">
+        <a href="/access" className="fixed bottom-5 start-5 z-50 inline-flex items-center gap-2 rounded-2xl bg-prootech-black px-4 py-3 text-xs font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-prootech-violet">
           <KeyRound size={15} />
           الحسابات والصلاحيات
         </a>
       )}
       {token && user?.permissions?.includes("finance:read") && (
-        <a href="/personal-contributions" className="fixed bottom-5 end-5 z-50 inline-flex items-center gap-2 rounded-xl bg-prootech-violet px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition hover:bg-prootech-violet-light">
+        <a href="/personal-contributions" className="fixed bottom-5 end-5 z-50 inline-flex items-center gap-2 rounded-2xl bg-violet-gradient px-4 py-3 text-xs font-semibold text-white shadow-xl transition hover:-translate-y-0.5">
           <Landmark size={15} />
           مساهمة الدخل الشخصي
         </a>
