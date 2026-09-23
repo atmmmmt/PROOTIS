@@ -10,6 +10,7 @@ const LegacyApp = lazy(() => import("./App").then((module) => ({ default: module
 const AccessPageV2 = lazy(() => import("./pages/AccessPageV2").then((module) => ({ default: module.AccessPageV2 })));
 const MyPortalPage = lazy(() => import("./pages/MyPortalPage").then((module) => ({ default: module.MyPortalPage })));
 const PersonalContributionsPage = lazy(() => import("./pages/PersonalContributionsPage").then((module) => ({ default: module.PersonalContributionsPage })));
+const PremiumLoginPage = lazy(() => import("./pages/PremiumLoginPage").then((module) => ({ default: module.PremiumLoginPage })));
 
 const moduleLinks: Array<{ to: string; permission: Permission; ar: string; en: string; icon: any }> = [
   { to: "/", permission: "analytics:read", ar: "لوحة الإدارة", en: "Executive", icon: LayoutDashboard },
@@ -166,6 +167,7 @@ function SmartLegacy() {
 export function EnhancedApp() {
   return (
     <Routes>
+      <Route path="/login" element={<Suspense fallback={<PageLoader />}><PremiumLoginPage /></Suspense>} />
       <Route path="/access" element={<AccessRoute />} />
       <Route path="/my-portal" element={<PartnerPortalRoute />} />
       <Route path="/personal-contributions" element={<PersonalContributionsRoute />} />
