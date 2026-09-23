@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -7,28 +7,41 @@ import {
   CircleDollarSign, ClipboardList, Languages, LayoutDashboard,
   Lock, Radar, Menu, Search, Settings2, ShieldCheck, TrendingUp, Users, WalletCards
 } from "lucide-react";
-import type { DashboardPayload, Locale } from "@prootech/shared-types";
-import { api, type TableResponse } from "./lib/api";
+import type { DashboardPayload } from "@prootech/shared-types";
+import { api } from "./lib/api";
 import { useAppStore } from "./lib/store";
 import { t } from "./lib/i18n";
-import { DataTable } from "./components/DataTable";
-import { PipelineChart, RevenueChart } from "./components/Charts";
 import { KpiCard, RiskItem, SectionHeader, Surface } from "./components/ui";
 import { NotificationsPanel } from "./components/NotificationsPanel";
-import { AiSalesPage } from "./pages/AiSalesPage";
-import { CrmPage } from "./pages/CrmPage";
-import { FinancePage } from "./pages/FinancePage";
-import { HrPage } from "./pages/HrPage";
-import { ProjectsPage } from "./pages/ProjectsPage";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { PartnersPage } from "./pages/PartnersPage";
-import { AuditPage } from "./pages/AuditPage";
-import { GrowthPage } from "./pages/GrowthPage";
-import { OwnershipPage } from "./pages/OwnershipPage";
+
+const CrmPage = lazy(() => import("./pages/CrmPage").then((module) => ({ default: module.CrmPage })));
+const FinancePage = lazy(() => import("./pages/FinancePage").then((module) => ({ default: module.FinancePage })));
+const HrPage = lazy(() => import("./pages/HrPage").then((module) => ({ default: module.HrPage })));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage").then((module) => ({ default: module.ProjectsPage })));
+const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage").then((module) => ({ default: module.ProjectDetailPage })));
+const PartnersPage = lazy(() => import("./pages/PartnersPage").then((module) => ({ default: module.PartnersPage })));
+const AuditPage = lazy(() => import("./pages/AuditPage").then((module) => ({ default: module.AuditPage })));
+const GrowthPage = lazy(() => import("./pages/GrowthPage").then((module) => ({ default: module.GrowthPage })));
+const OwnershipPage = lazy(() => import("./pages/OwnershipPage").then((module) => ({ default: module.OwnershipPage })));
+const AiSalesPage = lazy(() => import("./pages/AiSalesPage").then((module) => ({ default: module.AiSalesPage })));
+const RevenueChart = lazy(() => import("./components/Charts").then((module) => ({ default: module.RevenueChart })));
+const PipelineChart = lazy(() => import("./components/Charts").then((module) => ({ default: module.PipelineChart })));
 
 function useLocale() {
   const locale = useAppStore((state) => state.locale);
   return { locale, isAr: locale === "ar" };
+}
+
+function RouteLoader() {
+  const locale = useAppStore((state) => state.locale);
+  return (
+    <div className="grid min-h-[320px] place-items-center">
+      <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
+        {locale === "ar" ? "جاري تحميل القسم..." : "Loading module..."}
+      </div>
+    </div>
+  );
 }
 
 function LoginPage() {
@@ -121,6 +134,7 @@ function AppShell() {
   const storeLogout = useAppStore((state) => state.logout);
   const logout = () => { api.logout().catch(() => {}); storeLogout(); };
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notificationsReady, setNotificationsReady] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
@@ -128,10 +142,17 @@ function AppShell() {
     document.documentElement.dir = isAr ? "rtl" : "ltr";
   }, [isAr, locale]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setNotificationsReady(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const { data: notifData } = useQuery({
     queryKey: ["notifications"],
     queryFn: api.notifications,
-    refetchInterval: 60_000
+    enabled: notificationsReady,
+    staleTime: 2 * 60_000,
+    refetchInterval: 2 * 60_000
   });
   const unreadCount = (notifData?.rows ?? []).filter((n) => n.status === "unread").length;
 
@@ -219,20 +240,22 @@ function AppShell() {
         </header>
 
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <Routes>
-            <Route index element={<ExecutivePage />} />
-            <Route path="/crm" element={<CrmPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:id" element={<ProjectDetailPage />} />
-            <Route path="/finance" element={<FinancePage />} />
-            <Route path="/ownership" element={<OwnershipPage />} />
-            <Route path="/hr" element={<HrPage />} />
-            <Route path="/partners" element={<PartnersPage />} />
-            <Route path="/ai-sales" element={<AiSalesPage />} />
-            <Route path="/growth" element={<GrowthPage />} />
-            <Route path="/audit" element={<AuditPage />} />
-            <Route path="/ai" element={<AiPage />} />
-          </Routes>
+          <Suspense fallback={<RouteLoader />}>
+            <Routes>
+              <Route index element={<ExecutivePage />} />
+              <Route path="/crm" element={<CrmPage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
+              <Route path="/finance" element={<FinancePage />} />
+              <Route path="/ownership" element={<OwnershipPage />} />
+              <Route path="/hr" element={<HrPage />} />
+              <Route path="/partners" element={<PartnersPage />} />
+              <Route path="/ai-sales" element={<AiSalesPage />} />
+              <Route path="/growth" element={<GrowthPage />} />
+              <Route path="/audit" element={<AuditPage />} />
+              <Route path="/ai" element={<AiPage />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </div>
@@ -241,7 +264,7 @@ function AppShell() {
 
 function ExecutivePage() {
   const { locale } = useLocale();
-  const { data, isLoading } = useQuery({ queryKey: ["executive"], queryFn: api.executiveDashboard });
+  const { data, isLoading } = useQuery({ queryKey: ["executive"], queryFn: api.executiveDashboard, staleTime: 90_000 });
   if (isLoading || !data) return <SkeletonDashboard />;
 
   return (
@@ -252,10 +275,12 @@ function ExecutivePage() {
           <KpiCard key={kpi.id} label={locale === "ar" ? kpi.labelAr : kpi.labelEn} value={kpi.value} delta={kpi.delta} tone={kpi.tone} />
         ))}
       </section>
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <RevenueChart data={data.revenue} />
-        <PipelineChart data={data.pipeline} />
-      </section>
+      <Suspense fallback={<ChartSkeleton />}>
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <RevenueChart data={data.revenue} />
+          <PipelineChart data={data.pipeline} />
+        </section>
+      </Suspense>
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.85fr]">
         <Surface className="p-4">
           <SectionHeader title={t(locale, "risks")} />
@@ -309,7 +334,7 @@ function AiPanelInline() {
 
 function AiPage() {
   const { locale } = useLocale();
-  const { data: conversations } = useQuery({ queryKey: ["ai-conversations"], queryFn: api.aiConversations });
+  const { data: conversations } = useQuery({ queryKey: ["ai-conversations"], queryFn: api.aiConversations, staleTime: 2 * 60_000 });
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_0.75fr]">
       <div className="space-y-5">
@@ -407,6 +432,15 @@ function AiChat({ compact = false }: { compact?: boolean }) {
         )}
       </div>
     </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="h-80 animate-pulse rounded-xl bg-prootech-muted-strong" />
+      <div className="h-80 animate-pulse rounded-xl bg-prootech-muted-strong" />
+    </section>
   );
 }
 
