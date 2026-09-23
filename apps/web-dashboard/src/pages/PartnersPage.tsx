@@ -16,6 +16,7 @@ function useLocale() {
 }
 
 type Tab = "partners" | "agreements";
+type PartnerOption = Record<string, unknown>;
 
 const tabs: { key: Tab; path: string; ar: string; en: string }[] = [
   { key: "partners", path: "/partners", ar: "الشركاء", en: "Partners" },
@@ -53,11 +54,23 @@ export function PartnersPage() {
     queryFn: () => api.table(currentTab.path, search ? { search } : undefined)
   });
 
+  const partnerOptionsQuery = useQuery({
+    queryKey: ["partner-options"],
+    queryFn: () => api.table("/partners"),
+    enabled: tab === "agreements" || createOpen,
+    staleTime: 2 * 60_000
+  });
+
   const rows = data?.rows ?? [];
+  const partnerOptions = (partnerOptionsQuery.data?.rows ?? []) as PartnerOption[];
 
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.create(currentTab.path, payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["partners", tab] }); setCreateOpen(false); }
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partners", tab] });
+      qc.invalidateQueries({ queryKey: ["partner-options"] });
+      setCreateOpen(false);
+    }
   });
 
   return (
@@ -121,25 +134,26 @@ export function PartnersPage() {
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={locale === "ar" ? `إضافة ${tab === "partners" ? "شريك" : "اتفاقية"}` : `Add ${tab === "partners" ? "partner" : "agreement"}`} size="md"
         footer={<><button onClick={() => setCreateOpen(false)} className="rounded-xl border border-prootech-line px-4 py-2 text-sm font-medium text-prootech-text-muted hover:bg-prootech-muted">{t(locale, "cancel")}</button><button form="partners-create-form" type="submit" disabled={createMutation.isPending} className="rounded-xl bg-prootech-violet px-4 py-2 text-sm font-semibold text-white hover:bg-prootech-violet-light disabled:opacity-60">{createMutation.isPending ? "..." : t(locale, "save")}</button></>}>
-        <PartnersCreateForm tab={tab} onSubmit={(payload) => createMutation.mutate(payload)} locale={locale} />
+        <PartnersCreateForm tab={tab} onSubmit={(payload) => createMutation.mutate(payload)} locale={locale} partners={partnerOptions} />
       </Modal>
     </motion.div>
   );
 }
 
-function PartnersCreateForm({ tab, onSubmit, locale }: { tab: Tab; onSubmit: (data: Record<string, unknown>) => void; locale: string }) {
-  const fields: Record<Tab, Array<{ key: string; label: string; type?: string; options?: string[] }>> = {
+function PartnersCreateForm({ tab, onSubmit, locale, partners }: { tab: Tab; onSubmit: (data: Record<string, unknown>) => void; locale: string; partners: PartnerOption[] }) {
+  const fields: Record<Tab, Array<{ key: string; label: string; type?: string; options?: string[]; required?: boolean }>> = {
     partners: [
-      { key: "fullName", label: locale === "ar" ? "الاسم الكامل" : "Full Name" },
+      { key: "fullName", label: locale === "ar" ? "الاسم الكامل" : "Full Name", required: true },
       { key: "companyName", label: locale === "ar" ? "الشركة" : "Company Name" },
       { key: "email", label: "Email", type: "email" },
       { key: "phone", label: locale === "ar" ? "الهاتف" : "Phone" },
-      { key: "partnerType", label: locale === "ar" ? "نوع الشراكة" : "Partner Type", options: ["referral", "reseller", "affiliate", "integration"] }
+      { key: "partnerType", label: locale === "ar" ? "نوع الشراكة" : "Partner Type", options: ["referral", "reseller", "affiliate", "integration"], required: true }
     ],
     agreements: [
-      { key: "agreementType", label: locale === "ar" ? "نوع الاتفاقية" : "Agreement Type", options: ["referral", "reseller", "commission"] },
-      { key: "startDate", label: locale === "ar" ? "تاريخ البداية" : "Start Date", type: "date" },
-      { key: "settlementBasis", label: locale === "ar" ? "أساس التسوية" : "Settlement Basis", options: ["collected_cash", "invoiced_amount", "gross_revenue"] }
+      { key: "partnerId", label: locale === "ar" ? "الشريك" : "Partner", required: true },
+      { key: "agreementType", label: locale === "ar" ? "نوع الاتفاقية" : "Agreement Type", options: ["referral", "reseller", "commission"], required: true },
+      { key: "startDate", label: locale === "ar" ? "تاريخ البداية" : "Start Date", type: "date", required: true },
+      { key: "settlementBasis", label: locale === "ar" ? "أساس التسوية" : "Settlement Basis", options: ["collected_cash", "invoiced_amount", "gross_revenue"], required: true }
     ]
   };
 
@@ -155,17 +169,29 @@ function PartnersCreateForm({ tab, onSubmit, locale }: { tab: Tab; onSubmit: (da
     <form id="partners-create-form" onSubmit={handleSubmit} className="space-y-4">
       {fields[tab].map((field) => (
         <label key={field.key} className="block">
-          <span className="mb-1.5 block text-xs font-medium text-prootech-text-muted">{field.label}</span>
-          {field.options ? (
-            <select name={field.key} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white">
+          <span className="mb-1.5 block text-xs font-medium text-prootech-text-muted">{field.label}{field.required ? " *" : ""}</span>
+          {field.key === "partnerId" ? (
+            <select name={field.key} required={field.required} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white">
+              <option value="">{locale === "ar" ? "اختر الشريك" : "Select partner"}</option>
+              {partners.map((partner) => (
+                <option key={String(partner.id)} value={String(partner.id)}>{String(partner.fullName ?? partner.companyName ?? partner.id)}</option>
+              ))}
+            </select>
+          ) : field.options ? (
+            <select name={field.key} required={field.required} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white">
               <option value="">—</option>
               {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           ) : (
-            <input name={field.key} type={field.type ?? "text"} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white" />
+            <input name={field.key} required={field.required} type={field.type ?? "text"} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white" />
           )}
         </label>
       ))}
+      {tab === "agreements" && partners.length === 0 && (
+        <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-700">
+          {locale === "ar" ? "لا يوجد شركاء بعد. أضف الشريك أولاً ثم أنشئ الاتفاقية." : "No partners exist yet. Create the partner first, then add the agreement."}
+        </p>
+      )}
     </form>
   );
 }
