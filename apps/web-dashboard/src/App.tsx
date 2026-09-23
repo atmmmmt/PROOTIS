@@ -1,11 +1,14 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
-  Bell, Bot, BriefcaseBusiness, Building2, ChevronsLeft,
-  CircleDollarSign, ClipboardList, Languages, LayoutDashboard,
-  Lock, Radar, Menu, Search, Settings2, ShieldCheck, TrendingUp, Users, WalletCards
+  Bell,
+  Building2,
+  ChevronsLeft,
+  Languages,
+  Menu,
+  X
 } from "lucide-react";
 import type { DashboardPayload } from "@prootech/shared-types";
 import { api } from "./lib/api";
@@ -13,6 +16,8 @@ import { useAppStore } from "./lib/store";
 import { t } from "./lib/i18n";
 import { KpiCard, RiskItem, SectionHeader, Surface } from "./components/ui";
 import { NotificationsPanel } from "./components/NotificationsPanel";
+import { PremiumLoginPage } from "./pages/PremiumLoginPage";
+import { canAccess, navGroupForPath, navGroups, type AppNavItem } from "./navigation";
 
 const CrmPage = lazy(() => import("./pages/CrmPage").then((module) => ({ default: module.CrmPage })));
 const FinancePage = lazy(() => import("./pages/FinancePage").then((module) => ({ default: module.FinancePage })));
@@ -24,6 +29,8 @@ const AuditPage = lazy(() => import("./pages/AuditPage").then((module) => ({ def
 const GrowthPage = lazy(() => import("./pages/GrowthPage").then((module) => ({ default: module.GrowthPage })));
 const OwnershipPage = lazy(() => import("./pages/OwnershipPage").then((module) => ({ default: module.OwnershipPage })));
 const AiSalesPage = lazy(() => import("./pages/AiSalesPage").then((module) => ({ default: module.AiSalesPage })));
+const AccessPage = lazy(() => import("./pages/AccessPageV2").then((module) => ({ default: module.AccessPageV2 })));
+const PersonalContributionsPage = lazy(() => import("./pages/PersonalContributionsPage").then((module) => ({ default: module.PersonalContributionsPage })));
 const RevenueChart = lazy(() => import("./components/Charts").then((module) => ({ default: module.RevenueChart })));
 const PipelineChart = lazy(() => import("./components/Charts").then((module) => ({ default: module.PipelineChart })));
 
@@ -36,106 +43,79 @@ function RouteLoader() {
   const locale = useAppStore((state) => state.locale);
   return (
     <div className="grid min-h-[320px] place-items-center">
-      <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
-        {locale === "ar" ? "جاري تحميل القسم..." : "Loading module..."}
+      <div className="rounded-2xl border border-prootech-line bg-white/90 px-5 py-4 shadow-card">
+        <div className="flex items-center gap-3 text-sm text-prootech-text-muted">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-prootech-line border-t-prootech-violet" />
+          {locale === "ar" ? "جاري تحميل القسم..." : "Loading module..."}
+        </div>
       </div>
     </div>
   );
 }
 
-function LoginPage() {
-  const navigate = useNavigate();
-  const setSession = useAppStore((state) => state.setSession);
-  const { locale } = useLocale();
-  const [email, setEmail] = useState("admin@prootech.agency");
-  const [password, setPassword] = useState("Prootech@2026");
+function itemMatches(pathname: string, item: AppNavItem) {
+  if (item.to === "/") return pathname === "/";
+  if (item.end === false || item.end === undefined) return pathname === item.to || pathname.startsWith(`${item.to}/`);
+  return pathname === item.to;
+}
 
-  const login = useMutation({
-    mutationFn: () => api.login(email, password),
-    onSuccess: (payload) => { setSession(payload); navigate("/"); }
-  });
+function SidebarSections({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const { locale } = useLocale();
+  const user = useAppStore((state) => state.user);
 
   return (
-    <main className="min-h-screen bg-hero-gradient text-white">
-      <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="flex min-h-[46vh] flex-col justify-between overflow-hidden px-8 py-8 sm:px-12 lg:min-h-screen">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-prootech-violet text-sm font-bold shadow-lg">P</div>
-              <span className="text-sm font-semibold tracking-tight">Prootech OS</span>
-            </div>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.68rem] font-medium text-white/60">Arabic-first Platform</span>
-          </div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-2xl py-12">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60">
-              Operating System for Prootech Agency
-            </p>
-            <h1 className="text-4xl font-semibold leading-[1.15] tracking-[-0.02em] sm:text-5xl lg:text-[3.25rem]">
-              منصة تشغيل داخلية تربط المبيعات، المشاريع، المالية، الموارد البشرية، الشركاء، والذكاء الاصطناعي.
-            </h1>
-            <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {(["CRM", "Finance", "HR", "AI"] as const).map((item) => (
-                <div key={item} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-medium text-white/80 backdrop-blur-sm">{item}</div>
-              ))}
-            </div>
-          </motion.div>
-          <p className="text-xs text-white/35 tracking-wide">Identity-first · Audit-first · AI with guardrails</p>
-        </section>
-
-        <section className="flex items-center bg-white px-8 py-10 text-prootech-black sm:px-12">
-          <form onSubmit={(e) => { e.preventDefault(); login.mutate(); }} className="mx-auto w-full max-w-sm">
-            <div className="mb-8">
-              <div className="mb-5 grid h-11 w-11 place-items-center rounded-xl bg-prootech-violet text-white shadow-lg"><Lock size={20} /></div>
-              <h2 className="text-2xl font-semibold tracking-tight">{t(locale, "login")}</h2>
-              <p className="mt-2 text-sm leading-6 text-prootech-text-muted">استخدم بيانات demo للدخول واستعراض المنصة كاملة.</p>
-            </div>
-            <div className="space-y-4">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-medium text-prootech-text-muted">{t(locale, "email")}</span>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-3 text-sm outline-none transition focus:border-prootech-violet focus:bg-white focus:shadow-violet-glow" />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-medium text-prootech-text-muted">{t(locale, "password")}</span>
-                <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="w-full rounded-xl border border-prootech-line bg-prootech-muted px-4 py-3 text-sm outline-none transition focus:border-prootech-violet focus:bg-white focus:shadow-violet-glow" />
-              </label>
-            </div>
-            {login.error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{login.error.message}</p>}
-            <button className="mt-6 w-full rounded-xl bg-prootech-violet px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-prootech-violet-light hover:shadow-xl active:scale-[0.98]" type="submit">
-              {login.isPending ? "جاري الدخول..." : t(locale, "login")}
-            </button>
-          </form>
-        </section>
+    <nav className="flex-1 overflow-y-auto px-2.5 py-4 scrollbar-thin">
+      <div className="space-y-5">
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((item) => canAccess(user?.permissions, item.permission));
+          if (!visibleItems.length) return null;
+          return (
+            <section key={group.id}>
+              {!collapsed ? (
+                <p className="mb-2 px-3 text-[0.61rem] font-semibold uppercase tracking-[0.16em] text-white/30">
+                  {locale === "ar" ? group.ar : group.en}
+                </p>
+              ) : (
+                <div className="mx-auto mb-2 h-px w-7 bg-white/10" />
+              )}
+              <div className="space-y-1">
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={Boolean(item.end)}
+                      onClick={onNavigate}
+                      title={collapsed ? (locale === "ar" ? item.ar : item.en) : undefined}
+                      className={({ isActive }) => `flex min-h-10 items-center rounded-xl border transition-all duration-150 ${collapsed ? "justify-center px-2" : "gap-3 px-3"} ${isActive ? "border-white/10 bg-prootech-violet text-white shadow-[0_10px_28px_rgba(99,0,255,.28)]" : "border-transparent text-white/55 hover:border-white/[0.06] hover:bg-white/[0.055] hover:text-white"}`}
+                    >
+                      <Icon size={17} strokeWidth={2} className="shrink-0" />
+                      {!collapsed && <span className="truncate text-[0.79rem] font-medium">{locale === "ar" ? item.ar : item.en}</span>}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
-    </main>
+    </nav>
   );
 }
 
-const navItems = [
-  { to: "/", label: "executive", icon: LayoutDashboard },
-  { to: "/crm", label: "crm", icon: BriefcaseBusiness },
-  { to: "/projects", label: "projects", icon: ClipboardList },
-  { to: "/finance", label: "finance", icon: CircleDollarSign },
-  { to: "/ownership", label: "shareRules", icon: Settings2 },
-  { to: "/hr", label: "hr", icon: Users },
-  { to: "/partners", label: "partners", icon: WalletCards },
-  { to: "/ai-sales", label: "aiSales", icon: Radar },
-  { to: "/growth", label: "growth", icon: TrendingUp },
-  { to: "/audit", label: "audit", icon: ShieldCheck },
-  { to: "/ai", label: "ai", icon: Bot }
-] as const;
-
 function AppShell() {
   const { locale, isAr } = useLocale();
+  const location = useLocation();
   const user = useAppStore((state) => state.user);
   const setLocale = useAppStore((state) => state.setLocale);
   const sidebarOpen = useAppStore((state) => state.sidebarOpen);
   const toggleSidebar = useAppStore((state) => state.toggleSidebar);
   const storeLogout = useAppStore((state) => state.logout);
   const logout = () => { api.logout().catch(() => {}); storeLogout(); };
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notificationsReady, setNotificationsReady] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -147,6 +127,8 @@ function AppShell() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => setMobileNavOpen(false), [location.pathname]);
+
   const { data: notifData } = useQuery({
     queryKey: ["notifications"],
     queryFn: api.notifications,
@@ -156,104 +138,160 @@ function AppShell() {
   });
   const unreadCount = (notifData?.rows ?? []).filter((n) => n.status === "unread").length;
 
+  const activeGroup = navGroupForPath(location.pathname);
+  const visibleContextItems = activeGroup?.items.filter((item) => canAccess(user?.permissions, item.permission)) ?? [];
+  const activeItem = visibleContextItems.find((item) => itemMatches(location.pathname, item));
+
   return (
-    <div className="min-h-screen bg-prootech-muted text-prootech-black">
-      <aside className={`fixed inset-y-0 z-40 hidden border-prootech-line bg-white shadow-card transition-all duration-300 lg:flex lg:flex-col ${isAr ? "right-0 border-l" : "left-0 border-r"} ${sidebarOpen ? "w-[220px]" : "w-[60px]"}`}>
-        <div className={`flex h-14 shrink-0 items-center border-b border-prootech-line ${sidebarOpen ? "justify-between px-4" : "justify-center px-2"}`}>
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-prootech-violet text-xs font-bold text-white">P</div>
-            {sidebarOpen && <span className="truncate text-sm font-semibold tracking-tight">Prootech OS</span>}
+    <div className="min-h-screen bg-prootech-canvas text-prootech-black">
+      <aside className={`fixed inset-y-0 z-40 hidden border-prootech-line bg-[#0b090f] shadow-card transition-all duration-300 lg:flex lg:flex-col ${isAr ? "right-0 border-l" : "left-0 border-r"} ${sidebarOpen ? "w-[248px]" : "w-[72px]"}`}>
+        <div className={`flex h-16 shrink-0 items-center border-b border-white/[0.08] ${sidebarOpen ? "justify-between px-4" : "justify-center px-2"}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-gradient text-xs font-bold text-white shadow-[0_10px_28px_rgba(99,0,255,.28)]">P</div>
+            {sidebarOpen && (
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-semibold tracking-[-0.02em] text-white">PROOTECH</span>
+                <span className="block truncate text-[0.58rem] uppercase tracking-[0.15em] text-white/30">Operating System</span>
+              </div>
+            )}
           </div>
           {sidebarOpen && (
-            <button aria-label="toggle sidebar" onClick={toggleSidebar} className="rounded-lg p-1.5 text-prootech-text-muted hover:bg-prootech-muted">
-              <ChevronsLeft size={16} />
+            <button aria-label="collapse sidebar" onClick={toggleSidebar} className="rounded-lg p-1.5 text-white/45 hover:bg-white/[0.06] hover:text-white">
+              <ChevronsLeft size={16} className={isAr ? "rotate-180" : ""} />
             </button>
           )}
         </div>
-        <nav className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-0.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink key={item.to} to={item.to} end={item.to === "/"} title={!sidebarOpen ? t(locale, item.label) : undefined}
-                  className={({ isActive }) => `flex items-center rounded-lg transition-all duration-150 ${sidebarOpen ? "gap-3 px-3 py-2.5" : "justify-center px-2 py-2.5"} ${isActive ? "bg-prootech-violet text-white shadow-sm" : "text-prootech-text-muted hover:bg-prootech-muted hover:text-prootech-black"}`}
-                >
-                  <Icon size={17} strokeWidth={2} />
-                  {sidebarOpen && <span className="text-[0.8125rem] font-medium">{t(locale, item.label)}</span>}
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
-        {!sidebarOpen && (
-          <button onClick={toggleSidebar} className="flex h-10 items-center justify-center border-t border-prootech-line text-prootech-text-muted hover:bg-prootech-muted">
-            <ChevronsLeft size={16} className="rotate-180" />
-          </button>
-        )}
+
+        <SidebarSections collapsed={!sidebarOpen} />
+
+        <div className="border-t border-white/[0.08] p-2.5">
+          {sidebarOpen ? (
+            <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.035] p-2.5">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-xs font-semibold text-white">
+                {(user?.fullName?.trim()?.[0] ?? "U").toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-white/85">{user?.fullName ?? "User"}</p>
+                <p className="mt-0.5 truncate text-[0.62rem] text-white/35">{user?.email ?? ""}</p>
+              </div>
+            </div>
+          ) : (
+            <button onClick={toggleSidebar} className="mx-auto grid h-10 w-10 place-items-center rounded-xl text-white/45 hover:bg-white/[0.06] hover:text-white" title="Expand navigation">
+              <ChevronsLeft size={16} className={isAr ? "" : "rotate-180"} />
+            </button>
+          )}
+        </div>
       </aside>
 
-      <div className={`transition-all duration-300 ${sidebarOpen ? (isAr ? "lg:mr-[220px]" : "lg:ml-[220px]") : isAr ? "lg:mr-[60px]" : "lg:ml-[60px]"}`}>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-prootech-line bg-white/95 px-4 shadow-sm backdrop-blur-md">
-          <button className="rounded-lg p-1.5 text-prootech-text-muted hover:bg-prootech-muted lg:hidden" onClick={toggleSidebar} aria-label="menu">
-            <Menu size={18} />
-          </button>
-          <label className="hidden min-w-0 flex-1 items-center gap-2 rounded-lg border border-prootech-line bg-prootech-muted px-3 py-2 text-xs text-prootech-text-muted transition-colors focus-within:border-prootech-violet focus-within:bg-white md:flex">
-            <Search size={14} strokeWidth={2} className="shrink-0" />
-            <input
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              placeholder={t(locale, "search_placeholder")}
-              className="w-full bg-transparent text-xs outline-none placeholder:text-prootech-text-subtle"
-            />
-          </label>
-          <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 rounded-lg border border-prootech-line bg-white px-3 py-1.5 text-xs font-medium text-prootech-text-muted hover:bg-prootech-muted">
-              <Building2 size={14} />
-              <span className="hidden sm:inline">Prootech Agency</span>
-            </button>
-            <button onClick={() => setLocale(locale === "ar" ? "en" : "ar")} className="rounded-lg border border-prootech-line bg-white p-1.5 text-prootech-text-muted hover:bg-prootech-muted" aria-label="language">
-              <Languages size={16} />
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen((o) => !o)}
-                className="relative rounded-lg border border-prootech-line bg-white p-1.5 text-prootech-text-muted hover:bg-prootech-muted"
-                aria-label="alerts"
-              >
-                <Bell size={16} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -end-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-prootech-violet text-[0.55rem] font-bold text-white ring-2 ring-white">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
-              <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button aria-label="close menu" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
+          <aside className={`absolute inset-y-0 w-[286px] bg-[#0b090f] shadow-2xl ${isAr ? "right-0" : "left-0"}`}>
+            <div className="flex h-16 items-center justify-between border-b border-white/[0.08] px-4">
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-gradient text-xs font-bold text-white">P</div>
+                <div>
+                  <p className="text-sm font-semibold text-white">PROOTECH</p>
+                  <p className="text-[0.58rem] uppercase tracking-[0.15em] text-white/30">Operating System</p>
+                </div>
+              </div>
+              <button onClick={() => setMobileNavOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white/55"><X size={17} /></button>
             </div>
-            <button
-              onClick={logout}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-prootech-black text-xs font-semibold text-white hover:bg-prootech-violet"
-              title="Logout"
-            >
-              {(user?.fullName?.split(" ")[0] ?? "U")[0]}
+            <SidebarSections collapsed={false} onNavigate={() => setMobileNavOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      <div className={`transition-all duration-300 ${sidebarOpen ? (isAr ? "lg:mr-[248px]" : "lg:ml-[248px]") : isAr ? "lg:mr-[72px]" : "lg:ml-[72px]"}`}>
+        <header className="sticky top-0 z-30 border-b border-prootech-line bg-white/85 shadow-sm backdrop-blur-xl">
+          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+            <button className="grid h-9 w-9 place-items-center rounded-xl border border-prootech-line bg-white text-prootech-text-muted shadow-sm hover:bg-prootech-muted lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="menu">
+              <Menu size={18} />
             </button>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 text-[0.64rem] font-medium uppercase tracking-[0.11em] text-prootech-text-subtle">
+                <Building2 size={12} />
+                <span>Prootech Agency</span>
+                {activeGroup && <><span className="text-prootech-line-strong">/</span><span>{locale === "ar" ? activeGroup.ar : activeGroup.en}</span></>}
+              </div>
+              <h1 className="mt-0.5 truncate text-sm font-semibold tracking-[-0.02em] text-prootech-black">
+                {activeItem ? (locale === "ar" ? activeItem.ar : activeItem.en) : (locale === "ar" ? "نظام إدارة الشركة" : "Company Operating System")}
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={() => setLocale(locale === "ar" ? "en" : "ar")} className="rounded-xl border border-prootech-line bg-white px-3 py-2 text-xs font-medium text-prootech-text-muted shadow-sm hover:bg-prootech-muted" aria-label="language">
+                <Languages size={15} className="inline me-1.5" />{locale === "ar" ? "EN" : "AR"}
+              </button>
+              <div className="relative">
+                <button onClick={() => setNotifOpen((open) => !open)} className="relative grid h-9 w-9 place-items-center rounded-xl border border-prootech-line bg-white text-prootech-text-muted shadow-sm hover:bg-prootech-muted" aria-label="alerts">
+                  <Bell size={16} />
+                  {unreadCount > 0 && <span className="absolute -top-1 -end-1 grid h-4 min-w-4 place-items-center rounded-full bg-prootech-violet px-1 text-[0.52rem] font-bold text-white ring-2 ring-white">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+                </button>
+                <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+              </div>
+              <button onClick={logout} className="grid h-9 w-9 place-items-center rounded-xl bg-prootech-black text-xs font-semibold text-white shadow-sm hover:bg-prootech-violet" title={locale === "ar" ? "تسجيل الخروج" : "Logout"}>
+                {(user?.fullName?.trim()?.[0] ?? "U").toUpperCase()}
+              </button>
+            </div>
           </div>
+
+          {visibleContextItems.length > 1 && (
+            <div className="border-t border-prootech-line/80 bg-white/60 px-4 sm:px-6">
+              <div className="flex gap-1.5 overflow-x-auto py-2.5 scrollbar-thin">
+                {visibleContextItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = itemMatches(location.pathname, item);
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={Boolean(item.end)}
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition ${active ? "bg-prootech-violet-soft text-prootech-violet shadow-[inset_0_0_0_1px_rgba(99,0,255,.12)]" : "text-prootech-text-muted hover:bg-prootech-muted hover:text-prootech-black"}`}
+                    >
+                      <Icon size={14} />
+                      {locale === "ar" ? item.ar : item.en}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <main className="mx-auto max-w-[1480px] px-4 py-6 sm:px-6 lg:py-8">
           <Suspense fallback={<RouteLoader />}>
             <Routes>
               <Route index element={<ExecutivePage />} />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/:id" element={<ProjectDetailPage />} />
+
               <Route path="/finance" element={<FinancePage />} />
-              <Route path="/ownership" element={<OwnershipPage />} />
-              <Route path="/hr" element={<HrPage />} />
-              <Route path="/partners" element={<PartnersPage />} />
-              <Route path="/ai-sales" element={<AiSalesPage />} />
-              <Route path="/growth" element={<GrowthPage />} />
-              <Route path="/audit" element={<AuditPage />} />
-              <Route path="/ai" element={<AiPage />} />
+              <Route path="/finance/distribution" element={<OwnershipPage />} />
+              <Route path="/finance/contributions" element={<PersonalContributionsPage />} />
+
+              <Route path="/team" element={<Navigate to="/team/employees" replace />} />
+              <Route path="/team/employees" element={<HrPage />} />
+              <Route path="/team/partners" element={<PartnersPage />} />
+
+              <Route path="/intelligence/growth" element={<GrowthPage />} />
+              <Route path="/intelligence/sales" element={<AiSalesPage />} />
+              <Route path="/intelligence/assistant" element={<AiPage />} />
+
+              <Route path="/admin/audit" element={<AuditPage />} />
+              <Route path="/admin/access" element={<AccessPage />} />
+
+              <Route path="/ownership" element={<Navigate to="/finance/distribution" replace />} />
+              <Route path="/personal-contributions" element={<Navigate to="/finance/contributions" replace />} />
+              <Route path="/hr" element={<Navigate to="/team/employees" replace />} />
+              <Route path="/partners" element={<Navigate to="/team/partners" replace />} />
+              <Route path="/growth" element={<Navigate to="/intelligence/growth" replace />} />
+              <Route path="/ai-sales" element={<Navigate to="/intelligence/sales" replace />} />
+              <Route path="/ai" element={<Navigate to="/intelligence/assistant" replace />} />
+              <Route path="/audit" element={<Navigate to="/admin/audit" replace />} />
+              <Route path="/access" element={<Navigate to="/admin/access" replace />} />
             </Routes>
           </Suspense>
         </main>
@@ -282,7 +320,7 @@ function ExecutivePage() {
         </section>
       </Suspense>
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.85fr]">
-        <Surface className="p-4">
+        <Surface className="p-5">
           <SectionHeader title={t(locale, "risks")} />
           <div className="grid gap-3">
             {data.risks.map((risk) => (
@@ -299,21 +337,21 @@ function ExecutivePage() {
 function Hero({ dashboard }: { dashboard: DashboardPayload }) {
   const { locale } = useLocale();
   return (
-    <section className="overflow-hidden rounded-2xl bg-hero-gradient text-white">
+    <section className="overflow-hidden rounded-[26px] bg-hero-gradient text-white">
       <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.3fr_0.7fr] lg:p-10">
         <div>
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.68rem] font-medium text-white/60">
             Prootech Agency &nbsp;·&nbsp; {new Date().toLocaleDateString(locale === "ar" ? "ar-SY" : "en-US")}
           </p>
-          <h1 className="max-w-2xl text-[1.75rem] font-semibold leading-[1.2] tracking-[-0.02em] sm:text-[2.25rem]">
+          <h1 className="max-w-2xl text-[1.75rem] font-semibold leading-[1.2] tracking-[-0.025em] sm:text-[2.35rem]">
             {locale === "ar"
-              ? "قيادة الشركة من لوحة واحدة: الإيراد، التحصيل، الفريق، التسليم، والشركاء."
-              : "Run the company from one command view: revenue, collection, team, delivery, and partners."}
+              ? "صورة واحدة واضحة لتشغيل الشركة: العمل، التحصيل، الفريق، التسليم، والشركاء."
+              : "One clear operating view across work, cash, people, delivery, and partners."}
           </h1>
         </div>
         <div className="grid content-end gap-3">
           {dashboard.aiInsights.map((item) => (
-            <div key={item.id} className="rounded-xl border border-white/10 bg-white/6 p-4 text-[0.8125rem] leading-[1.7] text-white/80 backdrop-blur-sm">
+            <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-[0.8125rem] leading-[1.7] text-white/80 backdrop-blur-sm">
               {locale === "ar" ? item.textAr : item.textEn}
             </div>
           ))}
@@ -325,7 +363,7 @@ function Hero({ dashboard }: { dashboard: DashboardPayload }) {
 
 function AiPanelInline() {
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <SectionHeader title="AI Assistant" />
       <AiChat compact />
     </Surface>
@@ -338,7 +376,7 @@ function AiPage() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_0.75fr]">
       <div className="space-y-5">
-        <section className="overflow-hidden rounded-2xl bg-hero-gradient p-8 text-white">
+        <section className="overflow-hidden rounded-[26px] bg-hero-gradient p-8 text-white">
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.68rem] font-medium text-white/60">
             Tool-based assistant
           </p>
@@ -349,9 +387,7 @@ function AiPage() {
             يمكنه الإجابة عن أسئلة مالية، مبيعات، موارد بشرية، ومشاريع — عبر أدوات محدودة الصلاحيات.
           </p>
         </section>
-        <Surface className="p-5">
-          <AiChat />
-        </Surface>
+        <Surface className="p-5"><AiChat /></Surface>
       </div>
       {conversations && conversations.rows.length > 0 && (
         <Surface className="p-5">
@@ -359,7 +395,7 @@ function AiPage() {
           <div className="space-y-2">
             {conversations.rows.slice(0, 8).map((c) => (
               <div key={String(c.id)} className="rounded-xl border border-prootech-line p-3">
-                <p className="text-[0.8125rem] font-medium text-prootech-black truncate">{String(c.title)}</p>
+                <p className="truncate text-[0.8125rem] font-medium text-prootech-black">{String(c.title)}</p>
                 <p className="mt-0.5 text-[0.75rem] text-prootech-text-muted">{new Date(String(c.createdAt)).toLocaleString(locale === "ar" ? "ar-SY" : "en-US")}</p>
               </div>
             ))}
@@ -396,11 +432,7 @@ function AiChat({ compact = false }: { compact?: boolean }) {
           className="min-w-0 flex-1 rounded-xl border border-prootech-line bg-prootech-muted px-4 py-2.5 text-sm outline-none transition focus:border-prootech-violet focus:bg-white"
           placeholder={locale === "ar" ? "اسأل عن أي مؤشر أو سجل..." : "Ask about any metric or record..."}
         />
-        <button
-          onClick={() => chat.mutate(message)}
-          disabled={chat.isPending || !message.trim()}
-          className="shrink-0 rounded-xl bg-prootech-violet px-4 py-2.5 text-sm font-medium text-white hover:bg-prootech-violet-light disabled:opacity-60"
-        >
+        <button onClick={() => chat.mutate(message)} disabled={chat.isPending || !message.trim()} className="shrink-0 rounded-xl bg-prootech-violet px-4 py-2.5 text-sm font-medium text-white hover:bg-prootech-violet-light disabled:opacity-60">
           {chat.isPending ? "..." : "Ask"}
         </button>
       </div>
@@ -411,13 +443,7 @@ function AiChat({ compact = false }: { compact?: boolean }) {
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-prootech-violet">{item.tool}</p>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => { setRating((prev) => ({ ...prev, [item.id]: r })); feedback.mutate({ id: item.id, r }); }}
-                    className={`text-sm ${(rating[item.id] ?? 0) >= r ? "text-amber-400" : "text-prootech-line hover:text-amber-300"}`}
-                  >
-                    ★
-                  </button>
+                  <button key={r} onClick={() => { setRating((prev) => ({ ...prev, [item.id]: r })); feedback.mutate({ id: item.id, r }); }} className={`text-sm ${(rating[item.id] ?? 0) >= r ? "text-amber-400" : "text-prootech-line hover:text-amber-300"}`}>★</button>
                 ))}
               </div>
             </div>
@@ -438,8 +464,8 @@ function AiChat({ compact = false }: { compact?: boolean }) {
 function ChartSkeleton() {
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <div className="h-80 animate-pulse rounded-xl bg-prootech-muted-strong" />
-      <div className="h-80 animate-pulse rounded-xl bg-prootech-muted-strong" />
+      <div className="h-80 animate-pulse rounded-2xl bg-prootech-muted-strong" />
+      <div className="h-80 animate-pulse rounded-2xl bg-prootech-muted-strong" />
     </section>
   );
 }
@@ -447,15 +473,13 @@ function ChartSkeleton() {
 function SkeletonDashboard() {
   return (
     <div className="space-y-5">
-      <div className="h-52 animate-pulse rounded-2xl bg-prootech-muted-strong" />
+      <div className="h-52 animate-pulse rounded-[26px] bg-prootech-muted-strong" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-xl bg-prootech-muted-strong" />
-        ))}
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-prootech-muted-strong" />)}
       </div>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <div className="h-72 animate-pulse rounded-xl bg-prootech-muted-strong" />
-        <div className="h-72 animate-pulse rounded-xl bg-prootech-muted-strong" />
+        <div className="h-72 animate-pulse rounded-2xl bg-prootech-muted-strong" />
+        <div className="h-72 animate-pulse rounded-2xl bg-prootech-muted-strong" />
       </div>
     </div>
   );
@@ -474,7 +498,7 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={token ? <Navigate to="/" replace /> : <PremiumLoginPage />} />
       <Route path="/*" element={protectedApp} />
     </Routes>
   );
