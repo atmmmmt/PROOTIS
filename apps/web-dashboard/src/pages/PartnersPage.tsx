@@ -8,7 +8,7 @@ import { useAppStore } from "../lib/store";
 import { t } from "../lib/i18n";
 import { DataTable } from "../components/DataTable";
 import { Surface } from "../components/ui";
-import { Modal, ConfirmModal } from "../components/Modal";
+import { Modal } from "../components/Modal";
 
 function useLocale() {
   const locale = useAppStore((s) => s.locale);
@@ -44,8 +44,6 @@ export function PartnersPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("partners");
   const [createOpen, setCreateOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState("");
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
   const currentTab = tabs.find((item) => item.key === tab)!;
@@ -60,11 +58,6 @@ export function PartnersPage() {
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.create(currentTab.path, payload),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["partners", tab] }); setCreateOpen(false); }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.remove(currentTab.path, id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["partners", tab] }); setDeleteOpen(false); }
   });
 
   return (
@@ -111,14 +104,6 @@ export function PartnersPage() {
           </div>
 
           {isLoading ? <div className="h-64 animate-pulse rounded-2xl bg-prootech-muted-strong" /> : <DataTable title={locale === "ar" ? currentTab.ar : currentTab.en} rows={rows} columns={columnConfig[tab]} />}
-
-          {rows.length > 0 && (
-            <div className="mt-4 flex justify-end">
-              <button onClick={() => { setSelectedId(String(rows[0]?.id ?? "")); setDeleteOpen(true); }} className="text-xs text-prootech-text-subtle hover:text-red-600">
-                {locale === "ar" ? "إدارة حذف سجل محدد من الجدول" : "Delete a selected record"}
-              </button>
-            </div>
-          )}
         </div>
       </Surface>
 
@@ -138,8 +123,6 @@ export function PartnersPage() {
         footer={<><button onClick={() => setCreateOpen(false)} className="rounded-xl border border-prootech-line px-4 py-2 text-sm font-medium text-prootech-text-muted hover:bg-prootech-muted">{t(locale, "cancel")}</button><button form="partners-create-form" type="submit" disabled={createMutation.isPending} className="rounded-xl bg-prootech-violet px-4 py-2 text-sm font-semibold text-white hover:bg-prootech-violet-light disabled:opacity-60">{createMutation.isPending ? "..." : t(locale, "save")}</button></>}>
         <PartnersCreateForm tab={tab} onSubmit={(payload) => createMutation.mutate(payload)} locale={locale} />
       </Modal>
-
-      <ConfirmModal open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutate(selectedId)} title={locale === "ar" ? "تأكيد الحذف" : "Confirm Delete"} message={locale === "ar" ? "هل أنت متأكد من حذف هذا السجل؟" : "Are you sure you want to delete this record?"} confirmLabel={locale === "ar" ? "حذف" : "Delete"} variant="danger" isPending={deleteMutation.isPending} />
     </motion.div>
   );
 }
