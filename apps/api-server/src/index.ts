@@ -15,8 +15,10 @@ app.listen(env.PORT, () => {
 async function initializeData() {
   try {
     await connectMongo();
-    await hydrateFromMongo(db);
-    await hydrateOwnershipFromMongo();
+    await Promise.all([
+      hydrateFromMongo(db),
+      hydrateOwnershipFromMongo()
+    ]);
     ensureOwnershipDefaults();
     logger.info("Application data initialization complete.");
   } catch (error) {
